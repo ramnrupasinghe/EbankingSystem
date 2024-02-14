@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-
 public class User
 {
     public int UserId { get; set; }
@@ -40,6 +39,13 @@ public class ShoppingCart
         }
         return totalPrice;
     }
+
+    public void RemoveItem(int productId)
+    {
+        var itemToRemove = Items.FirstOrDefault(item => item.ProductId == productId);
+        if (itemToRemove != null)
+            Items.Remove(itemToRemove);
+    }
 }
 
 public class Order
@@ -66,10 +72,14 @@ public class Program
             Console.WriteLine("1. Register");
             Console.WriteLine("2. Login");
             Console.WriteLine("3. View Products");
-            Console.WriteLine("4. Add to Cart");
-            Console.WriteLine("5. View Cart");
-            Console.WriteLine("6. Checkout");
-            Console.WriteLine("7. Exit");
+            Console.WriteLine("4. Search Products");
+            Console.WriteLine("5. Add to Cart");
+            Console.WriteLine("6. View Cart");
+            Console.WriteLine("7. Remove from Cart");
+            Console.WriteLine("8. Checkout");
+            Console.WriteLine("9. View Orders");
+            Console.WriteLine("10. Logout");
+            Console.WriteLine("11. Exit");
             Console.Write("Enter your choice: ");
             string choice = Console.ReadLine();
 
@@ -85,15 +95,27 @@ public class Program
                     ViewProducts();
                     break;
                 case "4":
-                    AddToCart();
+                    SearchProducts();
                     break;
                 case "5":
-                    ViewCart();
+                    AddToCart();
                     break;
                 case "6":
-                    Checkout();
+                    ViewCart();
                     break;
                 case "7":
+                    RemoveFromCart();
+                    break;
+                case "8":
+                    Checkout();
+                    break;
+                case "9":
+                    ViewOrders();
+                    break;
+                case "10":
+                    Logout();
+                    break;
+                case "11":
                     Console.WriteLine("Goodbye!");
                     return;
                 default:
@@ -161,6 +183,27 @@ public class Program
         }
     }
 
+    private static void SearchProducts()
+    {
+        Console.Write("Enter product name to search: ");
+        string searchTerm = Console.ReadLine().ToLower();
+
+        var searchResults = products.Where(p => p.Name.ToLower().Contains(searchTerm));
+
+        if (searchResults.Any())
+        {
+            Console.WriteLine("Search Results:");
+            foreach (var product in searchResults)
+            {
+                Console.WriteLine($"ID: {product.ProductId}, Name: {product.Name}, Price: {product.Price}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("No products found matching the search term.");
+        }
+    }
+
     private static void AddToCart()
     {
         if (currentUser == null)
@@ -210,6 +253,20 @@ public class Program
         Console.WriteLine($"Total Price: {shoppingCart.TotalPrice(products)}");
     }
 
+    private static void RemoveFromCart()
+    {
+        Console.Write("Enter product ID to remove from cart: ");
+        if (int.TryParse(Console.ReadLine(), out int productId))
+        {
+            shoppingCart.RemoveItem(productId);
+            Console.WriteLine("Product removed from cart!");
+        }
+        else
+        {
+            Console.WriteLine("Invalid product ID!");
+        }
+    }
+
     private static void Checkout()
     {
         if (currentUser == null)
@@ -228,5 +285,35 @@ public class Program
         orders.Add(new Order { OrderId = orders.Count + 1, Items = shoppingCart.Items, TotalPrice = totalPrice });
         shoppingCart.Items.Clear();
         Console.WriteLine("Order placed successfully!");
+    }
+
+    private static void ViewOrders()
+    {
+        if (currentUser == null)
+        {
+            Console.WriteLine("Please login first!");
+            return;
+        }
+
+        var userOrders = orders.Where(o => o.Items.Any(i => i.ProductId == currentUser.UserId));
+
+        if (userOrders.Any())
+        {
+            Console.WriteLine("Your Orders:");
+            foreach (var order in userOrders)
+            {
+                Console.WriteLine($"Order ID: {order.OrderId}, Total Price: {order.TotalPrice}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("You have no orders.");
+        }
+    }
+
+    private static void Logout()
+    {
+        currentUser = null;
+        Console.WriteLine("Logged out successfully!");
     }
 }
